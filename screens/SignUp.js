@@ -5,182 +5,238 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SignUp({ onGoToLogin }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
-  const handleSignUp = () => {
-    setError('');
-    setSuccess('');
+  const handleSignUp = async () => {
+    setMessage('');
 
-    if (!username.trim() || !email.trim() || !password) {
-      setError('Please fill in all fields.');
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      setIsError(true);
+      setMessage('Please fill in all fields.');
       return;
     }
 
-    if (!email.includes('@')) {
-      setError('Please enter a valid email address.');
+    if (!email.includes('@') || !email.includes('.')) {
+      setIsError(true);
+      setMessage('Please enter a valid email address.');
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setIsError(true);
+      setMessage('Password must be at least 6 characters.');
       return;
     }
 
-    setSuccess('Account created successfully!');
+    try {
+      const user = {
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      };
+
+      await AsyncStorage.setItem(
+        'registeredUser',
+        JSON.stringify(user)
+      );
+
+      setIsError(false);
+      setMessage('Account created successfully!');
+
+      setTimeout(() => {
+        onGoToLogin();
+      }, 700);
+    } catch (error) {
+      setIsError(true);
+      setMessage('Unable to create account.');
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.logo}>♥ Smart Health</Text>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.card}>
+        <Text style={styles.logo}>♥ Smart Health</Text>
 
-      <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.title}>Create Account</Text>
 
-      <Text style={styles.subtitle}>
-        Start your journey to a healthier lifestyle
-      </Text>
+        <Text style={styles.subtitle}>
+          Start your healthy lifestyle journey
+        </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-      />
+        <Text style={styles.label}>Username</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter username"
+          value={username}
+          onChangeText={setUsername}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+        <Text style={styles.label}>Email</Text>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <TextInput
+          style={styles.input}
+          placeholder="Enter email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
 
-      {success ? <Text style={styles.successText}>{success}</Text> : null}
+        <Text style={styles.label}>Password</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-      <View style={styles.loginRow}>
-        <Text style={styles.loginText}>Already have an account? </Text>
+        {message ? (
+          <Text
+            style={
+              isError
+                ? styles.errorMessage
+                : styles.successMessage
+            }
+          >
+            {message}
+          </Text>
+        ) : null}
 
-        <TouchableOpacity onPress={onGoToLogin}>
-          <Text style={styles.loginLink}>Login</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSignUp}
+        >
+          <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
+
+        <View style={styles.loginRow}>
+          <Text style={styles.loginText}>
+            Already have an account?{' '}
+          </Text>
+
+          <TouchableOpacity onPress={onGoToLogin}>
+            <Text style={styles.loginLink}>Login</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#F5FBF8',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 25,
   },
 
+  card: {
+    width: '100%',
+    maxWidth: 450,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: '#E0ECE7',
+  },
+
   logo: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: 'bold',
     color: '#168C72',
+    textAlign: 'center',
     marginBottom: 25,
   },
 
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#222',
-    marginBottom: 8,
+    textAlign: 'center',
   },
 
   subtitle: {
-    fontSize: 15,
-    color: '#666',
+    fontSize: 14,
+    color: '#777',
     textAlign: 'center',
-    marginBottom: 30,
+    marginTop: 7,
+    marginBottom: 25,
+  },
+
+  label: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 7,
   },
 
   input: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D6E5DF',
     borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 14,
+    padding: 14,
     fontSize: 16,
-    marginBottom: 15,
-  },
-
-  errorText: {
-    width: '100%',
-    maxWidth: 380,
-    color: '#D32F2F',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-
-  successText: {
-    width: '100%',
-    maxWidth: 380,
-    color: '#168C72',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
 
   button: {
-    width: '100%',
-    maxWidth: 380,
     backgroundColor: '#168C72',
-    paddingVertical: 15,
     borderRadius: 10,
+    padding: 15,
     alignItems: 'center',
     marginTop: 5,
   },
 
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  errorMessage: {
+    color: '#D32F2F',
+    marginBottom: 12,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+
+  successMessage: {
+    color: '#168C72',
+    marginBottom: 12,
+    textAlign: 'center',
     fontWeight: 'bold',
   },
 
   loginRow: {
     flexDirection: 'row',
-    marginTop: 22,
+    justifyContent: 'center',
+    marginTop: 20,
   },
 
   loginText: {
     color: '#666',
-    fontSize: 14,
   },
 
   loginLink: {
     color: '#168C72',
-    fontSize: 14,
     fontWeight: 'bold',
   },
 });
